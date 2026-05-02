@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import requests
 import json
@@ -294,6 +294,10 @@ def proxy_image():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
+@app.route("/")
+def index():
+    return send_from_directory('.', 'index.html')
+
 if __name__ == "__main__":
     print("=" * 50)
     print("📕 书摘小红书助手后端服务")
