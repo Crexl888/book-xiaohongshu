@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>书摘图文助手 - 小红书创作神器</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: #fafafa;
+            color: #333;
+            line-height: 1.6;
+        }
+        .header {
+            background: linear-gradient(135deg, #ff6b6b, #ff8e53);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(255,107,107,0.3);
+        }
+        .header h1 { font-size: 24px; margin-bottom: 5px; }
+        .header p { font-size: 14px; opacity: 0.9; }
+        .container { max-width: 900px; margin: 20px auto; padding: 0 15px; }
+        .input-section {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        .input-section h2 { font-size: 18px; margin-bottom: 15px; color: #ff6b6b; }
+        .input-wrapper { display: flex; gap: 10px; flex-wrap: wrap; }
+        .input-wrapper input {
+            flex: 1;
+            min-width: 200px;
+            padding: 14px 18px;
+            border: 2px solid #ffe0e0;
+            border-radius: 12px;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s;
+        }
+        .input-wrapper input:focus {
+            border-color: #ff6b6b;
+            box-shadow: 0 0 0 3px rgba(255,107,107,0.1);
+        }
+        .btn-generate {
+            padding: 14px 30px;
+            background: linear-gradient(135deg, #ff6b6b, #ff8e53);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn-generate:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255,107,107,0.4);
+        }
+        .btn-generate:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .model-selector {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .model-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        .model-group label {
+            display: block;
+            font-size: 13px;
+            color: #999;
+            margin-bottom: 6px;
+        }
+        .model-group select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 2px solid #ffe0e0;
+            border-radius: 10px;
+            font-size: 14px;
+            outline: none;
+            background: white;
+            color: #333;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+        .model-group select:focus {
+            border-color: #ff6b6b;
+        }
+        .style-gallery { margin-top: 20px; }
+        .style-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+        .style-tag {
+            padding: 6px 14px;
+            background: #fafafa;
+            border: 1px solid #ffe0e0;
+            border-radius: 20px;
+            font-size: 13px;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .style-tag:hover, .style-tag.active {
+            background: #ff6b6b;
+            color: white;
+            border-color: #ff6b6b;
+        }
+        .loading { display: none; text-align: center; padding: 40px; background: white; border-radius: 16px; margin-bottom: 20px; }
+        .loading.show { display: block; }
+        .spinner {
+            width: 50px; height: 50px;
+            border: 4px solid #ffe0e0;
+            border-top-color: #ff6b6b;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text { color: #666; font-size: 15px; }
+        .loading-step { margin-top: 8px; color: #ff6b6b; font-size: 13px; }
+        .loading-wait {color: #ff8e53; font-size: 14px; margin-top: 4px; font-weight: bold; }
+        .results { display: none; }
+        .results.show { display: block; }
+        .segment-card {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        .segment-header { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
+        .segment-number {
+            width: 28px; height: 28px;
+            background: linear-gradient(135deg, #ff6b6b, #ff8e53);
+            color: white;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 14px; font-weight: bold; flex-shrink: 0;
+        }
+        .segment-title { font-size: 17px; font-weight: bold; color: #333; }
+        .segment-content {
+            background: #fff5f5;
+            padding: 15px 18px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            font-size: 15px;
+            line-height: 1.8;
+            color: #444;
+            border-left: 4px solid #ff6b6b;
+        }
+        .segment-why { font-size: 14px; color: #888; margin-bottom: 15px; padding-left: 5px; }
+        .image-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 15px 0; }
+        @media (max-width: 600px) { .image-grid { grid-template-columns: repeat(2, 1fr); } }
+        .image-item {
+            position: relative;
+            border-radius: 10px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.2s;
+            aspect-ratio: 9/16;
+        }
+        .image-item:hover { transform: scale(1.03); }
+        .image-item img { width: 100%; height: 100%; object-fit: cover; }
+        .image-item.selected::after {
+            content: "✓ 已选择";
+            position: absolute; top: 8px; right: 8px;
+            background: #ff6b6b; color: white;
+            font-size: 11px; padding: 3px 8px; border-radius: 10px;
+        }
+        .image-hint { font-size: 12px; color: #999; text-align: center; margin-top: 8px; }
+        .action-buttons { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px; }
+        .btn-copy {
+            padding: 10px 20px; background: #ff6b6b; color: white;
+            border: none; border-radius: 8px; font-size: 14px; cursor: pointer;
+        }
+        .btn-copy:hover { background: #ff5252; }
+        .btn-download {
+            padding: 10px 20px; background: white; color: #ff6b6b;
+            border: 2px solid #ff6b6b; border-radius: 8px; font-size: 14px; cursor: pointer;
+        }
+        .btn-download:hover { background: #fafafa; }
+        .toast {
+            position: fixed; bottom: 30px; left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #333; color: white;
+            padding: 12px 24px; border-radius: 30px; font-size: 14px;
+            opacity: 0; transition: all 0.3s; z-index: 1000;
+        }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .error-box { display: none; background: #fff0f0; border: 1px solid #ffcccc; border-radius: 12px; padding: 20px; margin-bottom: 20px; color: #d32f2f; }
+        .error-box.show { display: block; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📕 书摘图文助手</h1>
+        <p>输入书名 → AI提取精华 → 生成小红书配图</p>
+    </div>
+
+    <div class="container">
+        <div class="input-section">
+            <h2>📖 输入你想要创作的书名（必要时可加作者名）</h2>
+            <div class="model-selector">
+                <div class="model-group">
+                    <label>🤖 文字模型</label>
+                    <select id="textModelSelect">
+                        <option value="">加载中...</option>
+                    </select>
+                </div>
+                <div class="model-group">
+                    <label>🎨 图片模型</label>
+                    <select id="imageModelSelect">
+                        <option value="">加载中...</option>
+                    </select>
+                </div>
+            </div>
+            <div class="input-wrapper">
+                <input type="text" id="bookInput" placeholder="例如：被讨厌的勇气、小王子、原子习惯" onkeypress="if(event.key==='Enter') generate()">
+                <button class="btn-generate" id="generateBtn" onclick="generate()">🚀 开始创作</button>
+            </div>
+
+            <div class="style-gallery">
+                <p style="font-size:13px;color:#999;">🎨 参考当下热门小红书图文样式：</p>
+                <div class="style-tags">
+                    <span class="style-tag" onclick="selectStyle(this, '价值成长风')">💼 价值成长风</span>
+                    <span class="style-tag" onclick="selectStyle(this, '治愈暖色调')">🌸 治愈暖色调</span>
+                    <span class="style-tag" onclick="selectStyle(this, '知识干货风')">📚 知识干货风</span>
+                    <span class="style-tag" onclick="selectStyle(this, '简约文艺风')">✨ 简约文艺风</span>
+                    <span class="style-tag" onclick="selectStyle(this, '电影感构图')">🎬 电影感构图</span>
+                    <span class="style-tag" onclick="selectStyle(this, '手账日记风')">📒 手账日记风</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="error-box" id="errorBox"></div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <div class="loading-text">AI正在全力创作中...</div>
+            <div class="loading-wait">⏱️ 请耐心等待 1~2 分钟，AI 正在生成配图</div>
+            <div class="loading-step" id="loadingStep">📚 正在获取书籍信息</div>
+        </div>
+
+        <div class="results" id="results"></div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        const API_BASE = "http://localhost:5000/api";
+        let selectedStyle = "";
+        let currentSegments = [];
+
+        // ✅ 页面加载时获取可用模型列表
+        async function loadModels() {
+            try {
+                const resp = await fetch(`${API_BASE}/models`);
+                const data = await resp.json();
+
+                const textSelect = document.getElementById('textModelSelect');
+                const imageSelect = document.getElementById('imageModelSelect');
+
+                textSelect.innerHTML = data.text_models.map(m =>
+                    `<option value="${m}" ${m === data.default_text_model ? 'selected' : ''}>${m}</option>`
+                ).join('');
+
+                imageSelect.innerHTML = data.image_models.map(m =>
+                    `<option value="${m}" ${m === data.default_image_model ? 'selected' : ''}>${m}</option>`
+                ).join('');
+            } catch (e) {
+                console.error("获取模型列表失败:", e);
+                document.getElementById('textModelSelect').innerHTML = '<option value="">加载失败</option>';
+                document.getElementById('imageModelSelect').innerHTML = '<option value="">加载失败</option>';
+            }
+        }
+
+        // ✅ 页面加载完成后执行
+        loadModels();
+
+        function selectStyle(el, style) {
+            document.querySelectorAll('.style-tag').forEach(t => t.classList.remove('active'));
+            if (selectedStyle === style) {
+                selectedStyle = "";
+            } else {
+                el.classList.add('active');
+                selectedStyle = style;
+            }
+            showToast(selectedStyle ? `已选择样式：${style}` : "已取消样式选择");
+        }
+
+        async function generate() {
+            const bookName = document.getElementById('bookInput').value.trim();
+            if (!bookName) { showError("请输入书名"); return; }
+
+            const textModel = document.getElementById('textModelSelect').value;
+            const imageModel = document.getElementById('imageModelSelect').value;
+
+            document.getElementById('loading').classList.add('show');
+            document.getElementById('results').classList.remove('show');
+            document.getElementById('errorBox').classList.remove('show');
+            document.getElementById('generateBtn').disabled = true;
+            updateLoadingStep("📚 正在获取书籍信息");
+
+            try {
+                const response = await fetch(`${API_BASE}/analyze`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        book_name: bookName,
+                        style: selectedStyle,
+                        text_model: textModel,
+                        image_model: imageModel
+                    })
+                });
+
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || "生成失败，请稍后重试");
+
+                currentSegments = data.segments;
+                renderResults(data);
+                showToast(`✅ 成功生成${data.total_images}张配图！`);
+
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                document.getElementById('loading').classList.remove('show');
+                document.getElementById('generateBtn').disabled = false;
+            }
+        }
+
+        function updateLoadingStep(step) {
+            document.getElementById('loadingStep').textContent = step;
+        }
+
+        function renderResults(data) {
+            const resultsDiv = document.getElementById('results');
+            let html = `<div style="margin-bottom:20px;padding:15px;background:#fafafa;border-radius:10px;font-size:14px;color:#666;">
+                📖 书籍：《${data.book_name}》| 生成 ${data.segments.length} 个片段 | ${data.total_images} 张配图 | 🤖 ${data.text_model_used} | 🎨 ${data.image_model_used}
+            </div>`;
+
+            data.segments.forEach((segment, index) => {
+                html += `
+                <div class="segment-card">
+                    <div class="segment-header">
+                        <div class="segment-number">${index + 1}</div>
+                        <div class="segment-title">${segment.segment_title}</div>
+                    </div>
+                    <div class="segment-content">${segment.segment_content}</div>
+                    <div class="segment-why">💡 ${segment.why_useful}</div>
+                    <div class="image-grid">
+                        ${segment.images.map((img, imgIndex) => `
+                            <div class="image-item" onclick="selectImage(this, ${index}, ${imgIndex}, '${img}')">
+                                <img src="${img}" alt="配图${imgIndex + 1}" loading="lazy">
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="image-hint">💬 点击选择要下载的图片，不选则下载全部</div>
+                    <div class="action-buttons">
+                        <button class="btn-copy" onclick="copyContent(${index})">📋 复制文案</button>
+                        <button class="btn-download" onclick="saveToNotes(${index})">💾 存入素材库</button>
+                    </div>
+                </div>`;
+            });
+
+            resultsDiv.innerHTML = html;
+            resultsDiv.classList.add('show');
+            resultsDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function selectImage(el, segmentIndex, imgIndex, imgUrl) {
+            const grid = el.parentElement;
+            grid.querySelectorAll('.image-item').forEach(item => item.classList.remove('selected'));
+            el.classList.add('selected');
+            currentSegments[segmentIndex].selectedImage = imgUrl;
+            showToast("已选择配图");
+        }
+
+        function copyContent(segmentIndex) {
+            const segment = currentSegments[segmentIndex];
+            const text = `#${segment.segment_title}\n\n${segment.segment_content}\n\n💡 ${segment.why_useful}`;
+            navigator.clipboard.writeText(text).then(() => {
+                showToast("✅ 文案已复制，快去小红书发布吧！");
+            }).catch(() => {
+                showToast("复制失败，请手动选择复制");
+            });
+        }
+
+        async function downloadImage(url, filename) {
+            try {
+                const proxyUrl = `${API_BASE}/proxy-image?url=${encodeURIComponent(url)}`;
+                const response = await fetch(proxyUrl);
+                if (!response.ok) throw new Error('代理请求失败');
+                const blob = await response.blob();
+                const blobUrl = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = blobUrl;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+                return true;
+            } catch (err) {
+                console.error('下载失败:', err);
+                return false;
+            }
+        }
+
+        async function saveToNotes(segmentIndex) {
+            const segment = currentSegments[segmentIndex];
+            const bookName = document.getElementById('bookInput').value.trim();
+
+            const saved = JSON.parse(localStorage.getItem('myBookNotes') || '[]');
+            saved.unshift({
+                bookName: bookName,
+                ...segment,
+                savedAt: new Date().toISOString()
+            });
+            localStorage.setItem('myBookNotes', JSON.stringify(saved));
+
+            const validImages = segment.images.filter(img => img);
+
+            if (segment.selectedImage) {
+                const imgIndex = segment.images.indexOf(segment.selectedImage);
+                const ext = getFileExtensionFromUrl(segment.selectedImage);
+                const filename = `书摘_${sanitizeFilename(bookName)}_片段${segmentIndex + 1}_选中${ext}`;
+                await downloadImage(segment.selectedImage, filename);
+                showToast("💾 已存入素材库（图片已下载）");
+            } else if (validImages.length > 0) {
+                const successCount = await Promise.all(
+                    validImages.map((img, i) => {
+                        const ext = getFileExtensionFromUrl(img);
+                        const filename = `书摘_${sanitizeFilename(bookName)}_片段${segmentIndex + 1}_图${i + 1}${ext}`;
+                        return downloadImage(img, filename);
+                    })
+                ).then(results => results.filter(r => r).length);
+                showToast(`💾 已存入素材库（${successCount}/${validImages.length} 张图片已下载）`);
+            } else {
+                showToast("💾 已存入素材库（没有图片可下载）");
+            }
+        }
+
+        function getFileExtensionFromUrl(url) {
+            const match = url.match(/\.(jpg|jpeg|png|webp|gif)/i);
+            return match ? match[0] : '.png';
+        }
+
+        function sanitizeFilename(name) {
+            return name.replace(/[\/\\:*?"<>|]/g, '_').substring(0, 50);
+        }
+
+        function showError(message) {
+            const errorBox = document.getElementById('errorBox');
+            errorBox.textContent = `❌ ${message}`;
+            errorBox.classList.add('show');
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2500);
+        }
+    </script>
+</body>
+</html>
